@@ -1,0 +1,460 @@
+
+                try {
+                    (function () {
+                        var util = {
+                            isValidGuid: function (val) {
+                                var validGUIDPattern = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+                                var isValid = val && validGUIDPattern.test(val.trim());
+                                return isValid;
+                            },
+                            warnIfInvalidToken: function (token) {
+                                var isTokenValid = util.isValidGuid(token);
+                                if (!isTokenValid) {
+                                    console.error('Token is not a valid GUID');
+                                }
+                                return isTokenValid;
+                            }
+                        };
+                        var TatariTagManager = /** @class */ (function () {
+                            function TatariTagManager(token) {
+                                this.debugCookieName = 'ttm-debug-cookie';
+                                this.debugCookieTime = 24 * 60 * 60 * 1000; // 1 day
+                                this.debug = false;
+                                this.util = util;
+                                this._i = token;
+                                this.checkDebugCookie(); // Debug before everything
+                            }
+                            TatariTagManager.prototype.enableDebug = function () {
+                                this.createCookie(this.debugCookieName, '1', this.debugCookieTime);
+                                this.debug = true;
+                                console.info('Debug: TTM Debug Enabled');
+                            };
+                            // handle multiple instantiations of the snippet
+                            TatariTagManager.prototype.init = function (token) {
+                                this._i = token;
+                                // emit console error if token is not valid GUID
+                                util.warnIfInvalidToken(token);
+                            };
+                            TatariTagManager.prototype.flushCommandQueue = function (commandQueue) {
+                                if (commandQueue === void 0) { commandQueue = []; }
+                                if (this.debug) {
+                                    console.info('Debug: flushing command queue', commandQueue);
+                                }
+                                if (commandQueue.length > 0) {
+                                    var that_1 = this;
+                                    commandQueue.forEach(function (m) {
+                                        that_1[m[0]].apply(that_1, m.slice(1, m.length));
+                                    });
+                                }
+                            };
+                            TatariTagManager.prototype.onPageview = function () {
+                                if (this.debug) {
+                                    console.info('Debug: onPageview triggered');
+                                }
+                                // custom stuff you want to do on pageview
+
+(function () {
+    var baseUrl = 'https://segment.prod.bidr.io/associate-segment?';
+    var params = {
+        buzz_key: 'tatari',
+        segment_key: 'tatari-1022',
+        value: '',
+        uncacheplz: '' + Math.floor(Math.random() * 10000042069)
+    };
+    var img = new Image(0, 0);
+    img.src = baseUrl + new URLSearchParams(params).toString();
+    img.style.display = 'none';
+    img.alt = '';
+    document.body.appendChild(img);
+})();
+
+// hook for TTM on pageview
+if (window['TatariXandr'] && window['TatariXandr'].event) {
+    window['TatariXandr'].event('PageView');
+}
+else {
+    pixie('event', 'PageView');
+}
+
+                            };
+                            TatariTagManager.prototype.onTrack = function (event, arg) {
+                                if (this.debug) {
+                                    console.info('Debug: onTrack triggered', event, arg);
+                                }
+                                // custom stuff you want to do on track being fired
+
+(function () {
+    var segments = {"Sign Up": "tatari-1405", "Upgraded plan": "tatari-1406"};
+    var baseUrl = 'https://segment.prod.bidr.io/associate-segment?';
+    var params = {
+        buzz_key: 'tatari',
+        value: '',
+        segment_key: segments[event],
+        uncacheplz: '' + Math.floor(Math.random() * 10000042069)
+    };
+    // If we have a matching segment name, fire the event
+    if (params['segment_key']) {
+        var img = new Image(0, 0);
+        img.src = baseUrl + new URLSearchParams(params).toString();
+        img.style.display = 'none';
+        img.alt = '';
+        document.body.appendChild(img);
+    }
+})();
+
+// hook for TTM on track
+if (window['TatariXandr'] && window['TatariXandr'].event) {
+    window['TatariXandr'].event(event);
+}
+else {
+    // Xandr doesn't accept events with spaces or hyphens
+    pixie('event', event.replace(/-|\s/g, ''));
+}
+
+                            };
+                            TatariTagManager.prototype.onIdentify = function (id) {
+                                if (this.debug) {
+                                    console.info('Debug: onIdentify triggered', id);
+                                }
+                                // custom stuff to do on identify
+
+                            };
+                            TatariTagManager.prototype.createCookie = function (cookieName, cookieValue, cookieExp) {
+                                var exp = '';
+                                var date = new Date();
+                                var domain = "domain=" + this.getDomain() + ";";
+                                date.setTime(date.getTime() + cookieExp);
+                                exp = "expires=" + date.toUTCString() + ";";
+                                document.cookie = cookieName + "=" + cookieValue + "; " + exp + " " + domain + " path=/";
+                                return cookieValue;
+                            };
+                            TatariTagManager.prototype.getDomain = function () {
+                                var testCookieName = 'testTLD';
+                                var testCookie = testCookieName + "=test";
+                                var loc = document.location || { hostname: '' };
+                                var hostnames = loc.hostname.split('.');
+                                var domain = '';
+                                hostnames.some(function (_, i) {
+                                    var testDomain = hostnames.slice(hostnames.length - i - 1).join('.');
+                                    document.cookie = testCookie + ";domain=" + testDomain + ";";
+                                    if (document.cookie.indexOf(testCookie) !== -1) {
+                                        // found tld, remove cookie
+                                        domain = testDomain;
+                                        document.cookie = testCookieName + "=;domain=" + domain + ";expires=" + (new Date(0)).toUTCString() + ";";
+                                        return true;
+                                    }
+                                });
+                                return domain;
+                            };
+                            TatariTagManager.prototype.getCookie = function (cookieName) {
+                                var name = cookieName + "=";
+                                var decodedCookie = decodeURIComponent(document.cookie);
+                                var ca = decodedCookie.split(';');
+                                for (var _a = 0, ca_1 = ca; _a < ca_1.length; _a++) {
+                                    var c = ca_1[_a];
+                                    while (c.charAt(0) === ' ') {
+                                        c = c.substring(1);
+                                    }
+                                    if (c.indexOf(name) === 0) {
+                                        return c.substring(name.length, c.length);
+                                    }
+                                }
+                                return;
+                            };
+                            TatariTagManager.prototype.removeCookie = function (cookieName) {
+                                var domain = this.getDomain();
+                                // delete cookie which doesn't specify domain
+                                document.cookie = cookieName + "=; Max-Age=-99999999;";
+                                // delete cookie which does specify domain
+                                if (domain) {
+                                    document.cookie = cookieName + "=; Max-Age=-99999999; domain=" + domain + ";";
+                                }
+                            };
+                            TatariTagManager.prototype.checkDebugCookie = function () {
+                                var val = this.getCookie(this.debugCookieName);
+                                this.debug = val ? true : false;
+                            };
+                            return TatariTagManager;
+                        }());
+                        // Using tracker before real script is initialized
+                        var mockTagManager = window['ttm'] || [];
+                        // Here we replace the mock ttm with the real one
+                        var realTagManager = new TatariTagManager(mockTagManager['_i']);
+                        window['ttm'] = realTagManager;
+                        realTagManager.flushCommandQueue(mockTagManager);
+                    })();
+                }
+                catch (e) {
+                    console.log(e);
+                }
+        ÿU  xÿU'™   20221128144904-8l	k   https://d2hrivdxn8ekm8.cloudfront.net/tag-manager/d630b21c-157d-42d8-99b3-c39efdccca56-additional-latest.js   Ä&  
+                try {
+                    (function () {
+                        var util = {
+                            isValidGuid: function (val) {
+                                var validGUIDPattern = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+                                var isValid = val && validGUIDPattern.test(val.trim());
+                                return isValid;
+                            },
+                            warnIfInvalidToken: function (token) {
+                                var isTokenValid = util.isValidGuid(token);
+                                if (!isTokenValid) {
+                                    console.error('Token is not a valid GUID');
+                                }
+                                return isTokenValid;
+                            }
+                        };
+                        var TatariTagManager = /** @class */ (function () {
+                            function TatariTagManager(token) {
+                                this.debugCookieName = 'ttm-debug-cookie';
+                                this.debugCookieTime = 24 * 60 * 60 * 1000; // 1 day
+                                this.debug = false;
+                                this.util = util;
+                                this._i = token;
+                                this.checkDebugCookie(); // Debug before everything
+                            }
+                            TatariTagManager.prototype.enableDebug = function () {
+                                this.createCookie(this.debugCookieName, '1', this.debugCookieTime);
+                                this.debug = true;
+                                console.info('Debug: TTM Debug Enabled');
+                            };
+                            // handle multiple instantiations of the snippet
+                            TatariTagManager.prototype.init = function (token) {
+                                this._i = token;
+                                // emit console error if token is not valid GUID
+                                util.warnIfInvalidToken(token);
+                            };
+                            TatariTagManager.prototype.flushCommandQueue = function (commandQueue) {
+                                if (commandQueue === void 0) { commandQueue = []; }
+                                if (this.debug) {
+                                    console.info('Debug: flushing command queue', commandQueue);
+                                }
+                                if (commandQueue.length > 0) {
+                                    var that_1 = this;
+                                    commandQueue.forEach(function (m) {
+                                        that_1[m[0]].apply(that_1, m.slice(1, m.length));
+                                    });
+                                }
+                            };
+                            TatariTagManager.prototype.onPageview = function () {
+                                if (this.debug) {
+                                    console.info('Debug: onPageview triggered');
+                                }
+                                // custom stuff you want to do on pageview
+
+(function () {
+    var baseUrl = 'https://segment.prod.bidr.io/associate-segment?';
+    var params = {
+        buzz_key: 'tatari',
+        segment_key: 'tatari-1022',
+        value: '',
+        uncacheplz: '' + Math.floor(Math.random() * 10000042069)
+    };
+    var img = new Image(0, 0);
+    img.src = baseUrl + new URLSearchParams(params).toString();
+    img.style.display = 'none';
+    img.alt = '';
+    document.body.appendChild(img);
+})();
+
+// hook for TTM on pageview
+if (window['TatariXandr'] && window['TatariXandr'].event) {
+    window['TatariXandr'].event('PageView');
+}
+else {
+    pixie('event', 'PageView');
+}
+
+                            };
+                            TatariTagManager.prototype.onTrack = function (event, arg) {
+                                if (this.debug) {
+                                    console.info('Debug: onTrack triggered', event, arg);
+                                }
+                                // custom stuff you want to do on track being fired
+
+(function () {
+    var segments = {"Sign Up": "tatari-1405", "Upgraded plan": "tatari-1406"};
+    var baseUrl = 'https://segment.prod.bidr.io/associate-segment?';
+    var params = {
+        buzz_key: 'tatari',
+        value: '',
+        segment_key: segments[event],
+        uncacheplz: '' + Math.floor(Math.random() * 10000042069)
+    };
+    // If we have a matching segment name, fire the event
+    if (params['segment_key']) {
+        var img = new Image(0, 0);
+        img.src = baseUrl + new URLSearchParams(params).toString();
+        img.style.display = 'none';
+        img.alt = '';
+        document.body.appendChild(img);
+    }
+})();
+
+// hook for TTM on track
+if (window['TatariXandr'] && window['TatariXandr'].event) {
+    window['TatariXandr'].event(event);
+}
+else {
+    // Xandr doesn't accept events with spaces or hyphens
+    pixie('event', event.replace(/-|\s/g, ''));
+}
+
+                            };
+                            TatariTagManager.prototype.onIdentify = function (id) {
+                                if (this.debug) {
+                                    console.info('Debug: onIdentify triggered', id);
+                                }
+                                // custom stuff to do on identify
+
+                            };
+                            TatariTagManager.prototype.createCookie = function (cookieName, cookieValue, cookieExp) {
+                                var exp = '';
+                                var date = new Date();
+                                var domain = "domain=" + this.getDomain() + ";";
+                                date.setTime(date.getTime() + cookieExp);
+                                exp = "expires=" + date.toUTCString() + ";";
+                                document.cookie = cookieName + "=" + cookieValue + "; " + exp + " " + domain + " path=/";
+                                return cookieValue;
+                            };
+                            TatariTagManager.prototype.getDomain = function () {
+                                var testCookieName = 'testTLD';
+                                var testCookie = testCookieName + "=test";
+                                var loc = document.location || { hostname: '' };
+                                var hostnames = loc.hostname.split('.');
+                                var domain = '';
+                                hostnames.some(function (_, i) {
+                                    var testDomain = hostnames.slice(hostnames.length - i - 1).join('.');
+                                    document.cookie = testCookie + ";domain=" + testDomain + ";";
+                                    if (document.cookie.indexOf(testCookie) !== -1) {
+                                        // found tld, remove cookie
+                                        domain = testDomain;
+                                        document.cookie = testCookieName + "=;domain=" + domain + ";expires=" + (new Date(0)).toUTCString() + ";";
+                                        return true;
+                                    }
+                                });
+                                return domain;
+                            };
+                            TatariTagManager.prototype.getCookie = function (cookieName) {
+                                var name = cookieName + "=";
+                                var decodedCookie = decodeURIComponent(document.cookie);
+                                var ca = decodedCookie.split(';');
+                                for (var _a = 0, ca_1 = ca; _a < ca_1.length; _a++) {
+                                    var c = ca_1[_a];
+                                    while (c.charAt(0) === ' ') {
+                                        c = c.substring(1);
+                                    }
+                                    if (c.indexOf(name) === 0) {
+                                        return c.substring(name.length, c.length);
+                                    }
+                                }
+                                return;
+                            };
+                            TatariTagManager.prototype.removeCookie = function (cookieName) {
+                                var domain = this.getDomain();
+                                // delete cookie which doesn't specify domain
+                                document.cookie = cookieName + "=; Max-Age=-99999999;";
+                                // delete cookie which does specify domain
+                                if (domain) {
+                                    document.cookie = cookieName + "=; Max-Age=-99999999; domain=" + domain + ";";
+                                }
+                            };
+                            TatariTagManager.prototype.checkDebugCookie = function () {
+                                var val = this.getCookie(this.debugCookieName);
+                                this.debug = val ? true : false;
+                            };
+                            return TatariTagManager;
+                        }());
+                        // Using tracker before real script is initialized
+                        var mockTagManager = window['ttm'] || [];
+                        // Here we replace the mock ttm with the real one
+                        var realTagManager = new TatariTagManager(mockTagManager['_i']);
+                        window['ttm'] = realTagManager;
+                        realTagManager.flushCommandQueue(mockTagManager);
+                    })();
+                }
+                catch (e) {
+                    console.log(e);
+                }
+”ò¿Ÿz   z         9IgÖ      util   µs®¬      isValidGuid    &⁄õ      val    <§Å%      validGUIDPattern   [¨.RM      ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$      ßﬂ£¡      isValid    óñôb      trim   Ï6PN      warnIfInvalidToken     £Ì>      token	      Å–6      isTokenValid
+   ˛Q1      console    ˛tuW      error      ¯ÊQ      Token is not a valid GUID      %∏´v      TatariTagManager   K0äı      debugCookieName    G	.˚      ttm-debug-cookie   V›ƒ      debugCookieTime    .`      debug      2ï*      checkDebugCookie   {¨˙      enableDebug    eWG<      createCookie   ¸ı‰      info   x‹ê0      Debug: TTM Debug Enabled   íu`      init   `m	˛      flushCommandQueue      S“ı      commandQueue   ’2 j      Debug: flushing command queue      Ω…⁄\      that_1     ÿÖ Ã      slice      –iÍ
+      onPageview     ^	Èm      Debug: onPageview triggered    ¸-…      baseUrl     ºôGå/      https://segment.prod.bidr.io/associate-segment?!    ÀÀ&<      params"     ÆJ˛É      buzz_key#   "ó1π      tatari$     “$Ω      segment_key%    !û1      tatari-1022&    ˝~%
+      uncacheplz'     `-Ñó      floor(      '∂Ä≈      random)     e ú      img*    û“      Image+      ú∑»õ      src,    ¥≠y^      URLSearchParams-    e}ü      display.    ,Ω      none/   Kl¸      alt0    ∏OÄ      document1   òh;      body2   ≠$~      appendChild3    ¯2áâ      window4     3—Œ      TatariXandr5    II∑P      event6      «H      PageView7   ]":ÿ      pixie8      Ê⁄‡	      onTrack9    6Òë      arg:    €(ﬁæ      Debug: onTrack triggered;   àG!Ï      segments<   ˜œ€m      Sign Up=    	ÓÚ      tatari-1405>    —„"è      Upgraded plan?      ¬g<ê      tatari-1406@    ˆ#¬‘      -|\sA   ùbÆ
+      onIdentifyB     7πâ      Debug: onIdentify triggeredC    jŒçÈ
+      cookieNameD     π¥ºD      cookieValueE    ¿ã/%	      cookieExpF      —¬Ñ£      expG    R∞J      dateH   ∞ôw√      domainI     ΩùLö      domain=J    Ø⁄"õ	      getDomainK      ∞åÙ      setTimeL    uÙ.      getTimeM    q≠é      expires=N   _YNx      cookieO     ^*V∏      ; P     Œíá       path=/Q    a$⁄Á      testCookieNameR     ==†      testTLDS    ˇ™ùç
+      testCookieT     ùÆÓ      =testU      0+QA      locationV   î(~      hostnameW   ‘„{	      hostnamesX      $›gÿ      someY   QNÀ
+      testDomainZ     mQH      ;domain=[   ⁄Eú¡      indexOf\    ÂÔp	      =;domain=]      G(	      ;expires=^      ËIkí	      getCookie_      òG/C      decodedCookie`      ,dKf      ca_1a   våƒ      charAtb     ﬂY„	      substringc      Áˇ{      removeCookied   ™∞
+Ò      =; Max-Age=-99999999;e      ı}ì5      =; Max-Age=-99999999; domain=f      W¸0&      mockTagManagerg      Q›0      ttmh    2˝¨Ç      realTagManageri     =X˚      logj    ÇOâõ      TatariTagManager<k      ˘€ã&      TatariTagManager.prototype.enableDebugl     z8_¯      TatariTagManager.prototype.initm    'VD`,      TatariTagManager.prototype.flushCommandQueuen   –^X”.      TatariTagManager.prototype.flushCommandQueue/<o     ¯Pû%      TatariTagManager.prototype.onPageviewp      ¯/s'      TatariTagManager.prototype.onPageview/<q    ∞+s"      TatariTagManager.prototype.onTrackr     ù˜WB$      TatariTagManager.prototype.onTrack/<s   .Ñfz%      TatariTagManager.prototype.onIdentifyt      –ì©¥'      TatariTagManager.prototype.createCookieu    ¢R8$      TatariTagManager.prototype.getDomainv   ÃÏ_P&      TatariTagManager.prototype.getDomain/<w     2¯µü$      TatariTagManager.prototype.getCookiex   3UP∑'      TatariTagManager.prototype.removeCookiey    Ïòûè+      TatariTagManager.prototype.checkDebugCookie      ‰ Ô%,â                                                                                                                                                                     	                 
+      
+                                                                                                                                                                                          ≥Oåc                             P  f  h                                  	                                o                 o                 o                   Po                m                o                   !  )              5  P9  o                 ;    !  )              ç o               C  D  E  F  G  H  o                 Q  PS  P  W  PH  P            _  i  Y              C  *  _  
+   `  c              C  H  o                   o            e  Ø¬0∞      @     IÙ$KEÆ˙ö   
+                 "  $  ‚  &     
+      <  >         "  ‚  $  &           V  á&’™ç!´!   §      Ñ   <                        $¶j    t  ’ï+   ì   ®™´   ’´   ’¥   ◊H   ⁄∂   t ’»ì   °01 `PFÄ  ∏ P?0 ; `Pê P:0P §   î             ˇˇˇˇ              Ï   Ï   é                         7   j   :   j   :   ƒ   ’j    p  √   ’¥   H   ô   ì   ’e    ì   √  ’∂   }∂  H	   Ÿ  ~ √  ’¥   ∂  J   ’∂  ◊H
+   ⁄∂  t ’°0 #`P5 J ê@ >`PFÄ  Ø P80 -`P§00 -`Pö0 `P? `P/P4 P   Ñ   Ñ   C                        i   √   ’µ  ò&   ì   ’∂   ◊H   ⁄µ  ◊H   ⁄p  p ì   √  ’∂  û°0 7`P: .`P£ !P#ˇˇˇ˜P=  `P4 Q   à   à   E                        ∑   ◊H   ⁄µ  p √   ’∂   ó   ì   ¥   ◊H   ⁄   t ’ì   ∂   û°0 3`P/P8 $`P> $`Pë PI  `P4 Q  p  p  Ï                         j   √   ’∂   H   j   J   ’∂   H   j   J   ’∂   H   j   J   ’∂   H   j	   J
+   ’∂   H   j   J   ’∂   H   j   J   ’∂   H   j   J   ’∂   H   j   J   ’∂   H   j   J   ’∂   H   j   J   ’∂   H   j   J   ’∂   û°J	 `Pî@ `Pî@ `Pî@  `Pî@> `Pî@a `Pî@h `Pî@q `Pî@Ä  É `Pî@Ä  í `Pî@Ä  õ `Pî0000 `P4 Q §   §   [                       ‘√   ’∂      J   ’∂    \&J   ’∂   J   ’∂   ∑   J   ’∂   µ  J   ’∂   ◊H   ⁄t  ’°6  `P?  `P?  `P;  `P?  `P=  `P+P4 P   å   å   M                        ‘√   ’∂   ◊H   ⁄∂   H      ∂   H   t ’∂   J   ’¥   ◊H   ⁄   t ’°6  `P¢ P4  `P;  `Pë P4 P   \   \   '                       ‘√   ’∂   µ  J   ’∑   ◊H   ⁄µ  t ’°6  `PM  `P/P4 P  ‡   ‡   ã                       ‘√   ’µ  ñ   ì   e    ¬  ’ì   ∂   H   ñ"   ì   ¥   ◊H   ⁄   µ  t ’ì   µ  H   ñ'   ì   ∂   ƒ   ’µ  ◊H   ⁄j   t ’ì   °6 $`P#-
+`P> $`Pì0 $`Pî PI $`Pî0 1`P: $`P/PI P h   h   2                         ∑   µ  II◊H   ⁄∑   µ  ◊H   ⁄µ  H   p t ’°0 (`P™ P#ˇˇˇP4 $P      Æ                        ‘√   ’∂   H   ñ   ì   ¥   ◊H   ⁄   t ’ì   j    t  ’¥   H   ò   ì	   ’¥   H   H   ì   ñ)   ì   ¥   H   ◊H   ⁄	   t ’ï   ì   ¥
+       	   t ’ì   °6 $`Pì0 $`Pë PI `PF PD `P≥0 `Pñ PN0 `Pê PI P   L  L  ‡          	                  √   ’7      :      :      :      ¥	   ◊H
+   ⁄¥	   ◊H   ⁄p  
+  ®Bd†B)p %:   √  ’¥   }Ÿ  ~ √  ’∂  ∂   ¥   }∂  Ÿ  ~ ◊H   ⁄p  %J   ’∂  H      J   ’∂     J   ’¥   H   ◊H   ⁄∂  t ’°0 `P: `P5 : : : ù !P-ˇˇˇıPN `Pî0 `Pñ P*P: `Pî0 `P? `Pï P4P  0  0                          ‘√   ’∂   H   ñ'   ì   ¥   ◊H   ⁄   ∑   µ t ’ì   j    t  ’¥   H   ò   ì	   ’¥   H   H   ì   ñ)   ì   ¥   H   ◊H   ⁄∑   t ’ï2   ì   ¥	       ∑   ◊H
+   ⁄i      p t ’ì   °6 $`Pì0 $`Pô PI `PF PD `P≥0 `Pñ PN@ `P° P#ˇˇˇPI" P    ò  ò           
+       "        7      :      :   √   ’   √  ’7      :	   
+   :   ∂   ∑   I:   
+   ¥   ◊H   ⁄¥   ◊H   ⁄p  
+  ®Bd†B)p %:   √  ’∂  H   ñÑ   ì   ¥   }Ÿ  ~ √  ’∂  ∂  ¥   }∂  Ÿ  ~ ◊H   ⁄p  %J   ’∂  H      J   ’∂  
+   J   ’¥   H   ◊H   ⁄∂  t ’ì"   °0 `P%*? `P: `P5 : : ? ù !P-ˇˇˇıPN
+ `Pì0 `Pî0 `Pñ P*P: `Pî0 `P? `Pï PIP   p   p   7                       ‘√   ’∂   H   ñ"   ì   ¥   ◊H   ⁄   µ  t ’ì   °6 $`Pì0 $`Pî PI P        ∫                       ‘√  ’   √   ’¥   }Ÿ  ~  √  ’   ∂  ◊H   ⁄p  %   %√  ’∂  ◊H   ⁄∂  ◊H   ⁄p  µ %t ’   ∂  ◊H	   ⁄p  %   %√   ’¥
+   µ     %µ %   %∂   %   %∂  %   %J   ’µ û°6 *`P: +`Pí0 -`Pê P?  `Pñ P'ˇˇˇÛP4  `Pê P?  `P¥0  `P3 Q  Ë   Ë   è                            ƒ   ’∑      %ƒ   ’¥   H   ô   ì   ’7      :   ì   √   ’∂   H   ◊H   ⁄	   p ƒ   ’   ƒ   ’∑   ◊H
+   ⁄j   t ’∑   û°0 5`P; 1`Pë0 *`Pö î0 0`Pï P9 -`P;  `Pë 
+PD  `P5 Q   (  (  Õ                        ∑   ◊H   ⁄∑   H   µ &&p ◊H   ⁄   p √   ’¥   ∑      %∂   %   %J   ’¥   H   ◊H	   ⁄∑   p ˇñW   ì   ∂   ƒ   ’¥   ∑   
+   %∑   %   %¥   }Ÿ  ~ ◊H   ⁄p  %   %J   ’ûì   °0 5`Pú 
+P/ P8 $`P°0 (`Pñ Pê@ (`P: (`Pß IP*Pê0 (`PA	  V ƒ  §           
+             µ     %√   ’¥    ¥   H   p √  ’∂  ◊H   ⁄   p √  ’√  ’∂  √  ’î   ∂  ∂  H   ñØ   ì
+   ∂  ∂  I√  ’î   ∂  ◊H   ⁄p 	   ñ#   ì   ∂  ◊H
+   ⁄p √  ’ï«ˇˇˇì   ∂  ◊H   ⁄∂   p ñ+   ì   ∂  ◊H
+   ⁄∂   H   ∂  H   p ûì   ∂  .'√  ’ïBˇˇˇì    û°0 +`P> 4`Pê P8 )`Pê P8 % 	`P&
+`P)fPò0 ,`P> +fP,Pì0 (`P,Pí@	 (`P/P? (`Pù 	PC F N`Pï@  `P1 Q  ƒ         y   >          M   √   §   §   `                       ‘√  ’∂  ◊H   ⁄p  √   ’¥   µ     %J   ’∂   ñ)   ì   ¥   µ     %∂   %   %J   ’ì   °6 -`P+PH  `Pî@ $`P> $`P§@ P   Ñ   Ñ   L                        ‘√  ’∂  ◊H   ⁄∂  H   p √   ’∂  ∂   ñ   ì   ï   ì   ì   J   ’°6 *`Pî P8  `P©0 P    3ıÿ  `   P™      `  
+        `           “     `    1      
+        `“   	  `         `  
+        ù   	  p  `     @#  "  %  $  t   ‚    '  (  &  *  ,  ∏  +  §  .  -  /  0  1  2  
+  `  
+        p3  4  5  6  7    `  @=  <  ?  >       @#  "  t   ‚  $    '  (  &  *  ,  ∏  +  §  .  -  /  0  1  2    `  
+    :    p3  4  5  7  U    Pt     `  
+    B    `t     I  J  ;  K  L  M  ∫  0  =  O     P  N    `    ˝   .  0  Z  ;  N  [  \  ]    ∫    `R  T  0  U    @t   V  Y  .  X    p  `=  Y   0  N  Y  ;    a     b  [    `J  0  d  N  e  ;    `^        `  pf    p    p    p  
+  p    p8    pA    p    pJ    p^    pc    p    `   @  p    p    p3  g  “      `  p  `
+  i  ˇXÑﬂ                 ‘              †              †
+             †
+ ª      j      † 	            †     	   k      †       l      † !      m      †       n      † A      o      † )      p      † h      q      † L      r      † u      s      † z      t      † ò      u      † ä      v      † §      w      † ∞      x      † ∑      y      † ùH©¿      Ä&      Ä&                 Ä5   &  ,   &                  ë   ∆  à   ∆     2              P  ¯  P  
+   9           ≥  K$  ™  K$     G            Ì  ü  ‘  ü     5           Ó  Ò  Â  Ò     N            á  p  ~  p  !   G          Ç∆  _  Ω  _  &   T            ò
+    è
+    -   B          Æ  0  •  0  2   M             Æ  \  •  \  8   
+           Ç|  "  s  "  P   J            ò    è    V   
+            q  Å  h  Å  s   M           “    …    z   O          Ä_  ¸  V  ¸  É   L             Ú  ≠  È  ≠  â   8            J  É   A  É   ï   L           ‘   Û"  À   Û"  §   O           H#  ˚#  ?#  ˚#  ≠   S           5°›+2ﬂ_,JoQj      cîî(cîî(E:›cùƒ   ï    O^partitionKey=%28https%2Cwebflow.com%29,:https://d2hrivdxn8ekm8.cloudfront.net/tag-manager/d630b21c-157d-42d8-99b3-c39efdccca56-additional-latest.js necko:classified 1 strongly-framed 1 security-info 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 request-method GET response-head HTTP/2 200 OK
+content-type: application/javascript
+content-length: 9856
+date: Sat, 10 Dec 2022 01:35:02 GMT
+last-modified: Thu, 14 Jul 2022 23:17:28 GMT
+etag: "295632cdf74e65ee52b7a6d98ac912da"
+x-amz-version-id: KK4KuCHffsGpjKGXP7Wo.pNcGcCG0iXa
+accept-ranges: bytes
+server: AmazonS3
+x-cache: Hit from cloudfront
+via: 1.1 3b27da4a594c6f7cee35602c619712a2.cloudfront.net (CloudFront)
+x-amz-cf-pop: CPT52-C1
+x-amz-cf-id: VIkiZHb_y1_oLTDbAehT32_O8VhL-bN3rgV5XmiP3whFTiNWzajBQQ==
+age: 45314
+X-Firefox-Spdy: h2
+ original-response-headers content-type: application/javascript
+content-length: 9856
+date: Sat, 10 Dec 2022 01:35:02 GMT
+last-modified: Thu, 14 Jul 2022 23:17:28 GMT
+etag: "295632cdf74e65ee52b7a6d98ac912da"
+x-amz-version-id: KK4KuCHffsGpjKGXP7Wo.pNcGcCG0iXa
+accept-ranges: bytes
+server: AmazonS3
+x-cache: Hit from cloudfront
+via: 1.1 3b27da4a594c6f7cee35602c619712a2.cloudfront.net (CloudFront)
+x-amz-cf-pop: CPT52-C1
+x-amz-cf-id: VIkiZHb_y1_oLTDbAehT32_O8VhL-bN3rgV5XmiP3whFTiNWzajBQQ==
+age: 45314
+X-Firefox-Spdy: h2
+ ctid 2 uncompressed-len 0 net-response-time-onstart 373 net-response-time-onstop 415 alt-data 1;9856,javascript/moz-script-bytecode-20221128144904-8l alt-data-from-child 1   |o
